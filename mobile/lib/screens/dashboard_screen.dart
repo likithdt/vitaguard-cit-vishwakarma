@@ -8,6 +8,7 @@ import 'package:vitalguard/screens/sos_screen.dart';
 import 'package:vitalguard/screens/medication_screen.dart';
 import 'package:vitalguard/screens/ambulance_map_screen.dart';
 import 'package:vitalguard/screens/med_ai_chat_screen.dart';
+import 'package:vitalguard/screens/full_report_screen.dart';
 import 'package:vitalguard/services/sos_service.dart';
 import 'package:vitalguard/services/threshold_service.dart';
 import 'package:vitalguard/services/notification_service.dart';
@@ -194,7 +195,7 @@ class _HomePage extends StatelessWidget {
         const SizedBox(height: 14),
         _GlucoseCard(value: vitals?.glucose),
         const SizedBox(height: 14),
-        _DarkCard(vitals: vitals),
+        _DarkCard(vitals: vitals, history: history),
         const SizedBox(height: 8),
         Center(child: Text(
           vitals != null
@@ -392,7 +393,10 @@ class _GlucoseCard extends StatelessWidget {
 }
 
 class _DarkCard extends StatelessWidget {
-  final VitalsModel? vitals; const _DarkCard({this.vitals});
+  final VitalsModel? vitals;
+  final List<VitalsModel> history;
+  const _DarkCard({this.vitals, required this.history});
+
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(24),
@@ -440,11 +444,23 @@ class _DarkCard extends StatelessWidget {
             ])),
             const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70, size: 14),
           ]))),
-      Container(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        decoration: BoxDecoration(color: const Color(0xFF006578),
-          borderRadius: BorderRadius.circular(25)),
-        child: const Text('VIEW FULL REPORT', style: TextStyle(color: Colors.white,
-          fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1.5))),
+      // ── View Full Report button ────────────────────────────
+      GestureDetector(
+        onTap: () => Navigator.push(context,
+          MaterialPageRoute(builder: (_) => FullReportScreen(
+            latestVitals: vitals, history: history))),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          decoration: BoxDecoration(
+            color: const Color(0xFF006578),
+            borderRadius: BorderRadius.circular(25)),
+          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            const Icon(Icons.assignment_rounded, color: Colors.white, size: 16),
+            const SizedBox(width: 8),
+            const Text('VIEW FULL REPORT', style: TextStyle(color: Colors.white,
+              fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+          ]))),
     ]));
 }
 
