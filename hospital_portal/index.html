@@ -700,6 +700,35 @@
       border-color: #e2e8f0 !important;
     }
 
+    .cure-btn {
+      margin-top: 8px;
+      width: 100%;
+      padding: 7px 12px;
+      background: linear-gradient(135deg, #16a34a, #22c55e);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      letter-spacing: 0.5px;
+      transition: all 0.2s ease;
+    }
+
+    .cure-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(22, 163, 74, 0.35);
+    }
+
+    .cured-tag {
+      font-size: 10px;
+      font-weight: 800;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: rgba(34, 197, 94, 0.12);
+      color: var(--accent-green);
+    }
+
     /* ─── Ambulance Cards ─── */
     .amb-cards {
       padding: 0 16px 16px;
@@ -1561,13 +1590,14 @@
           q.innerHTML = '<div class="queue-empty">No active emergencies</div>';
           return;
         }
-        q.innerHTML = ev.map(e => `<div class="queue-item" onclick="sel('${e.user_id}','${e.alert_message || ''}',${JSON.stringify(e.location || { lat: 12.9716, lng: 77.5946 })},${JSON.stringify(e.hospital || { name: 'Apollo', lat: 12.9252, lng: 77.6011 })})">
+        q.innerHTML = ev.map(e => `<div class="queue-item" id="qi-${e.user_id}" onclick="sel('${e.user_id}','${e.alert_message || ''}',${JSON.stringify(e.location || { lat: 12.9716, lng: 77.5946 })},${JSON.stringify(e.hospital || { name: 'Apollo', lat: 12.9252, lng: 77.6011 })},'${e.sos_id || e.user_id}')">
       <div class="queue-item-top">
         <div class="queue-item-id"><div class="queue-item-dot"></div><span class="queue-item-name">${e.user_id}</span></div>
         <span class="queue-item-status">${(e.status || 'TRIGGERED').replace(/_/g, ' ').toUpperCase()}</span>
       </div>
       <div class="queue-item-alert">${(e.alert_message || '').substring(0, 55)}...</div>
       <div class="queue-item-meta">📍${e.location?.lat?.toFixed(4) || '--'}, ${e.location?.lng?.toFixed(4) || '--'} &nbsp;|&nbsp; 🏥${e.hospital?.name || '--'}</div>
+      <button class="cure-btn" onclick="event.stopPropagation(); markCured('${e.sos_id || e.user_id}', this)">✓ Mark Patient as Cured</button>
     </div>`).join('');
 
         // Also update alerts page
@@ -1576,7 +1606,7 @@
     }
 
     // ── Select Emergency ──
-    function sel(uid, alert, loc, hosp) {
+    function sel(uid, alert, loc, hosp, sosId) {
       if (markers.pat) map.removeLayer(markers.pat);
       const pi = L.divIcon({
         html: `<div style="background:#B6171E;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:18px;border:3px solid white;box-shadow:0 3px 10px rgba(182,23,30,0.4)">🏠</div>`,
@@ -1605,6 +1635,51 @@
 
     function acceptCase(uid) {
       alert('Case accepted! Ambulance confirmed for ' + uid);
+    }
+
+    // ── Mark Patient as Cured ──
+    async function markCured(sosId, btn) {
+      if (!confirm('Mark this patient as CURED and discharge from emergency queue?')) return;
+      try {
+        btn.disabled = true;
+        btn.textContent = 'Resolving...';
+        const r = await fetch(`${API}/hospital/resolve/${sosId}`, { method: 'POST' });
+        const d = await r.json();
+        if (d.success) {
+          // Remove this queue item immediately
+          const item = btn.closest('.queue-item');
+          if (item) {
+            item.style.transition = 'opacity 0.4s, max-height 0.4s';
+            item.style.opacity = '0';
+            item.style.maxHeight = '0';
+            item.style.overflow = 'hidden';
+            setTimeout(() => item.remove(), 450);
+          }
+          // Refresh stats
+          fetchStats();
+          showToast('✅ Patient marked as cured and discharged!');
+        } else {
+          btn.disabled = false;
+          btn.textContent = '✓ Mark Patient as Cured';
+          alert('Failed to resolve case. Please try again.');
+        }
+      } catch (e) {
+        btn.disabled = false;
+        btn.textContent = '✓ Mark Patient as Cured';
+        alert('Network error: ' + e.message);
+      }
+    }
+
+    // ── Toast notification ──
+    function showToast(msg) {
+      const t = document.createElement('div');
+      t.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#16a34a;color:white;'
+        + 'padding:14px 20px;border-radius:12px;font-size:13px;font-weight:700;'
+        + 'box-shadow:0 8px 24px rgba(0,0,0,0.15);z-index:9999;animation:fadeIn 0.3s ease;'
+        + 'max-width:320px;';
+      t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 3500);
     }
 
     // ── Fetch Ambulances ──
@@ -1644,6 +1719,8 @@
     }
 
     // ── WebSocket ──
+    let _routeLayer = null;
+
     function connectWS() {
       try {
         const ws = new WebSocket('ws://localhost:8000/hospital/ws');
@@ -1652,7 +1729,19 @@
           document.getElementById('cb').style.background = 'rgba(34, 197, 94, 0.1)';
           document.getElementById('cb').style.borderColor = 'rgba(34, 197, 94, 0.2)';
         };
-        ws.onmessage = () => { fetchQ(); fetchStats(); };
+        ws.onmessage = (evt) => {
+          try {
+            const msg = JSON.parse(evt.data);
+            // Handle patient-cured broadcast
+            if (msg.type === 'case_resolved') {
+              showToast('✅ Case resolved: ' + msg.sos_id);
+              fetchQ();    // refresh queue on ALL connected dashboards
+              fetchStats(); // refresh stats
+              return;
+            }
+          } catch(_) {}
+          fetchQ(); fetchStats();
+        };
         ws.onclose = () => setTimeout(connectWS, 3000);
       } catch (e) {
         document.getElementById('cl').textContent = 'Polling';

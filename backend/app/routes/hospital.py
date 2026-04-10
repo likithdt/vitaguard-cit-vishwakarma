@@ -3,6 +3,7 @@ from app.database import get_db
 from app.services.ambulance_service import get_all_ambulances
 from app.services.traffic_service import get_traffic_log, get_active_corridors
 from typing import List
+from datetime import datetime, timezone
 import json
 router = APIRouter()
 _hospital_ws: List[WebSocket] = []
@@ -39,6 +40,48 @@ async def traffic_log_hospital(): return get_traffic_log()
 
 @router.get("/traffic/corridors")
 async def corridors(): return get_active_corridors()
+
+# ── Mark patient as cured / resolved ─────────────────────────
+@router.post("/resolve/{sos_id}")
+async def resolve_case(sos_id: str):
+    """
+    Hospital marks a patient as cured/discharged.
+    Updates the SOS event status to 'resolved' and broadcasts
+    to ALL connected hospital dashboards + mobile clients.
+    """
+    from bson import ObjectId
+    db = get_db()
+    # Support both string sos_id and ObjectId
+    try:
+        oid = ObjectId(sos_id)
+        flt = {"_id": oid}
+    except Exception:
+        flt = {"sos_id": sos_id}
+
+    result = await db.sos_events.update_one(
+        flt,
+        {"$set": {
+            "status": "resolved",
+            "resolved_at": datetime.now(timezone.utc).isoformat(),
+            "patient_cured": True,
+        }}
+    )
+    if result.matched_count == 0:
+        # Try user_id fallback
+        await db.sos_events.update_many(
+            {"user_id": sos_id, "status": {"$ne": "resolved"}},
+            {"$set": {"status": "resolved", "patient_cured": True,
+                      "resolved_at": datetime.now(timezone.utc).isoformat()}}
+        )
+
+    # Broadcast resolution to all hospital dashboard WebSocket connections
+    await notify_hospital({
+        "type": "case_resolved",
+        "sos_id": sos_id,
+        "message": f"Patient case {sos_id} marked as cured/discharged",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    })
+    return {"success": True, "sos_id": sos_id, "status": "resolved"}
 
 @router.websocket("/ws")
 async def hospital_ws(websocket: WebSocket):

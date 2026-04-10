@@ -61,3 +61,31 @@ async def sos_history(uid: str = Depends(verify_firebase_token)):
     db = get_db()
     cursor = db.sos_events.find({"user_id":uid},sort=[("timestamp",-1)],limit=20,projection={"_id":0})
     return await cursor.to_list(length=20)
+
+class SmsTestRequest(BaseModel):
+    to_phone: str  # e.g. "+919876543210"
+    message: Optional[str] = "VitalGuard SMS test — your integration is working!"
+
+@router.post("/test-sms")
+async def test_sms(req: SmsTestRequest):
+    """
+    Test endpoint — send a real SMS to verify Twilio credentials.
+    Call: POST /sos/test-sms  body: {"to_phone": "+919876543210"}
+    No auth required so you can test from curl/Postman easily.
+    """
+    import os
+    from twilio.rest import Client
+    sid   = os.getenv("TWILIO_ACCOUNT_SID", "")
+    token = os.getenv("TWILIO_AUTH_TOKEN", "")
+    frm   = os.getenv("TWILIO_PHONE_FROM", "")
+    if not (sid and token and frm) or sid == "your_account_sid_here":
+        # Simulation mode — no credentials set yet
+        print(f"\n[SMS TEST - SIMULATION]\nTo: {req.to_phone}\nMsg: {req.message}\n")
+        return {"sent": True, "mode": "simulation",
+                "note": "Set TWILIO_* env vars to send real SMS"}
+    try:
+        msg = Client(sid, token).messages.create(
+            body=req.message, from_=frm, to=req.to_phone)
+        return {"sent": True, "mode": "live", "sid": msg.sid, "status": msg.status}
+    except Exception as e:
+        return {"sent": False, "error": str(e)}
