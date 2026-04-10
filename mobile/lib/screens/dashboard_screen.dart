@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vitalguard/models/vitals_model.dart';
 import 'package:vitalguard/providers/vitals_provider.dart';
@@ -275,6 +277,8 @@ class _HRCardState extends State<_HRCard> with SingleTickerProviderStateMixin {
       ]),
     ]));
 }
+
+
 
 class _BarSpark extends StatelessWidget {
   final List<double> values; const _BarSpark({required this.values});
@@ -553,7 +557,23 @@ class _ProfilePage extends StatefulWidget {
   @override State<_ProfilePage> createState() => _ProfilePageState();
 }
 class _ProfilePageState extends State<_ProfilePage> {
-  bool _sync = true; String _interval = '5m';
+  bool _sync = true;
+  String _interval = '5m';
+  String _userName = 'Loading...';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _userName = prefs.getString('user_name') ?? 'VitalGuard User';
+    });
+  }
   @override
   Widget build(BuildContext context) => SafeArea(child: CustomScrollView(slivers: [
     SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.fromLTRB(20,16,20,0),
@@ -572,7 +592,7 @@ class _ProfilePageState extends State<_ProfilePage> {
               const Text('Patient', style: TextStyle(color: Colors.white60, fontSize: 11)),
               Text(widget.userId, style: const TextStyle(color: Colors.white,
                 fontSize: 22, fontWeight: FontWeight.w900)),
-              const Text('VitalGuard User', style: TextStyle(color: Colors.white54, fontSize: 12)),
+              Text(_userName, style: const TextStyle(color: Colors.white54, fontSize: 12)),
             ]),
           ])),
         const SizedBox(height: 14),
@@ -618,25 +638,12 @@ class _ProfilePageState extends State<_ProfilePage> {
               const SizedBox(width: 10),
               Expanded(child: Text(v.alertTriggered ? 'Alert Triggered' : 'Routine Checkpoint',
                 style: const TextStyle(fontSize: 12))),
-              Text(v.timestamp?.toLocal().toString().substring(11,19) ?? '--',
+              Text(DateFormat('hh:mm:ss a').format(v.timestamp?.toLocal() ?? DateTime.now()),
                 style: TextStyle(fontSize: 11, color: Colors.grey[500])),
             ]))),
           if (widget.history.isEmpty)
             const Text('No history yet', style: TextStyle(color: Colors.grey, fontSize: 13)),
         ]),
-        const SizedBox(height: 12),
-        Container(padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(color: const Color(0xFFE6F1FB), borderRadius: BorderRadius.circular(16)),
-          child: Row(children: [
-            const Icon(Icons.rocket_launch_rounded, color: Color(0xFF006578)),
-            const SizedBox(width: 12),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('Phase 2 Active', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
-              Text('ML prediction · Ambulance tracking · Hospital portal',
-                style: TextStyle(fontSize: 11, color: Colors.grey[600])),
-            ])),
-          ])),
-        const SizedBox(height: 20),
       ]))),
   ]));
 }

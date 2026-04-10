@@ -21,7 +21,12 @@ class VitalsModel {
     glucose:     ((json['glucose']      ?? 100.0) as num).toDouble(),
     temperature: ((json['temperature']  ?? 36.6)  as num).toDouble(),
     timestamp:   json['timestamp'] != null
-                   ? DateTime.tryParse(json['timestamp'].toString()) : null,
+                   ? DateTime.tryParse(
+                       json['timestamp'].toString().contains('+') ||
+                       json['timestamp'].toString().endsWith('Z')
+                         ? json['timestamp'].toString()
+                         : '${json['timestamp']}Z')
+                   : null,
     alertTriggered: json['alert_triggered'] ?? false,
     alertMessage:   json['alert_message']?.toString(),
   );
