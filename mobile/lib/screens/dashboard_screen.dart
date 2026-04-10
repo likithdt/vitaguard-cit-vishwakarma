@@ -7,6 +7,7 @@ import 'package:vitalguard/providers/vitals_provider.dart';
 import 'package:vitalguard/screens/sos_screen.dart';
 import 'package:vitalguard/screens/medication_screen.dart';
 import 'package:vitalguard/screens/ambulance_map_screen.dart';
+import 'package:vitalguard/screens/med_ai_chat_screen.dart';
 import 'package:vitalguard/services/sos_service.dart';
 import 'package:vitalguard/services/threshold_service.dart';
 import 'package:vitalguard/services/notification_service.dart';
@@ -405,6 +406,40 @@ class _DarkCard extends StatelessWidget {
         : 'Based on last 24 readings. Cardiovascular trend is stabilizing.',
         style: const TextStyle(fontSize: 13, color: Colors.white60, height: 1.6)),
       const SizedBox(height: 16),
+      // ── AI Assistant Banner ────────────────────────────────
+      GestureDetector(
+        onTap: () => Navigator.push(context,
+          MaterialPageRoute(builder: (_) => MedAiChatScreen(vitals: vitals))),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF6C63FF), Color(0xFF9B59B6)],
+              begin: Alignment.topLeft, end: Alignment.bottomRight),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [BoxShadow(color: const Color(0xFF6C63FF).withOpacity(0.4),
+              blurRadius: 12, offset: const Offset(0, 4))]),
+          child: Row(children: [
+            Container(
+              width: 38, height: 38,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(10)),
+              child: const Icon(Icons.assistant_rounded, color: Colors.white, size: 20)),
+            const SizedBox(width: 12),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('Ask MedAI', style: TextStyle(
+                color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900)),
+              Text(
+                vitals != null
+                  ? 'Get personalised medication advice'
+                  : 'Ask about medications & conditions',
+                style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 11)),
+            ])),
+            const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70, size: 14),
+          ]))),
       Container(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         decoration: BoxDecoration(color: const Color(0xFF006578),
           borderRadius: BorderRadius.circular(25)),
