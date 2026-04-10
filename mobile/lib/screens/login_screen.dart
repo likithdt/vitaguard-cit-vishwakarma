@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vitalguard/config/app_config.dart';
 import 'package:vitalguard/screens/dashboard_screen.dart';
@@ -25,8 +26,13 @@ class _LS extends State<LoginScreen> {
       final r = await http.get(Uri.parse('${AppConfig.baseUrl}/auth/profile'),
         headers: {'Authorization': 'Bearer LKT01'});
       if (r.statusCode == 200) {
+        final body = jsonDecode(r.body) as Map<String, dynamic>;
+        final fullName = (body['full_name'] as String?)?.trim() ?? '';
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('user_id', 'LKT01');
+        if (fullName.isNotEmpty) {
+          await prefs.setString('user_name', fullName);
+        }
         if (mounted) Navigator.pushReplacement(context,
           MaterialPageRoute(builder: (_) => const DashboardScreen(userId: 'LKT01')));
       } else {

@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vitalguard/models/vitals_model.dart';
 
 /// Medication Reminders — Phase 1 requirement
@@ -58,11 +60,12 @@ class MedicationScreen extends StatelessWidget {
     return reminders;
   }
 
+  // hour, minute in 24h
   static const _schedule = [
-    {'time': '08:00 AM', 'med': 'Metformin 500mg', 'type': 'Diabetes', 'color': Color(0xFFFF9F43)},
-    {'time': '12:00 PM', 'med': 'Amlodipine 5mg',  'type': 'BP',       'color': Color(0xFFB6171E)},
-    {'time': '06:00 PM', 'med': 'Aspirin 75mg',     'type': 'Heart',    'color': Color(0xFF006578)},
-    {'time': '09:00 PM', 'med': 'Atorvastatin 10mg','type': 'Cholesterol','color': Color(0xFF9B59B6)},
+    {'time': '08:00 AM', 'h': 8,  'm': 0,  'med': 'Metformin 500mg',    'type': 'Diabetes',    'color': Color(0xFFFF9F43)},
+    {'time': '12:00 PM', 'h': 12, 'm': 0,  'med': 'Amlodipine 5mg',     'type': 'BP',          'color': Color(0xFFB6171E)},
+    {'time': '06:00 PM', 'h': 18, 'm': 0,  'med': 'Aspirin 75mg',        'type': 'Heart',       'color': Color(0xFF006578)},
+    {'time': '09:00 PM', 'h': 21, 'm': 0,  'med': 'Atorvastatin 10mg',  'type': 'Cholesterol', 'color': Color(0xFF9B59B6)},
   ];
 
   @override
@@ -210,6 +213,7 @@ class _ReminderCard extends StatelessWidget {
   }
 }
 
+// ── Schedule Row — persisted checkbox + live countdown ─────────
 class _ScheduleRow extends StatefulWidget {
   final Map s;
   const _ScheduleRow(this.s);
@@ -218,44 +222,146 @@ class _ScheduleRow extends StatefulWidget {
 
 class _ScheduleRowState extends State<_ScheduleRow> {
   bool _taken = false;
+  Timer? _ticker;
+  Duration _remaining = Duration.zero;
+
+  /// SharedPreferences key: "<medName>_<YYYY-MM-DD>"
+  /// The date suffix ensures the tick auto-resets each new day.
+  String get _prefKey {
+    final today = DateTime.now();
+    final dateStr = '${today.year}-${today.month.toString().padLeft(2,'0')}-${today.day.toString().padLeft(2,'0')}';
+    return '${widget.s['med']}_$dateStr';
+  }
+
   @override
-  Widget build(BuildContext context) => Container(
-    margin: const EdgeInsets.only(bottom: 10),
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: _taken ? const Color(0xFFF0FDF4) : Colors.white,
-      borderRadius: BorderRadius.circular(14),
-      border: Border.all(
-        color: _taken ? const Color(0xFF16a34a).withOpacity(0.3) : Colors.grey.shade100),
-      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6)]),
-    child: Row(children: [
-      Container(width: 52, height: 52,
-        decoration: BoxDecoration(
-          color: (widget.s['color'] as Color).withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12)),
-        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Text(widget.s['time']!.split(' ')[0],
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900,
-              color: widget.s['color'] as Color)),
-          Text(widget.s['time']!.split(' ')[1],
-            style: TextStyle(fontSize: 9, color: Colors.grey[500])),
-        ])),
-      const SizedBox(width: 14),
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(widget.s['med']!, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700,
-          color: _taken ? Colors.grey : const Color(0xFF1A1C1C),
-          decoration: _taken ? TextDecoration.lineThrough : null)),
-        Text(widget.s['type']!, style: TextStyle(fontSize: 11, color: Colors.grey[500])),
-      ])),
-      GestureDetector(
-        onTap: () => setState(() => _taken = !_taken),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          width: 32, height: 32,
+  void initState() {
+    super.initState();
+    _loadTaken();
+    _updateCountdown();
+    // Tick every second to update countdown
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() => _updateCountdown());
+    });
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadTaken() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() => _taken = prefs.getBool(_prefKey) ?? false);
+  }
+
+  Future<void> _toggleTaken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final next = !_taken;
+    await prefs.setBool(_prefKey, next);
+    if (mounted) setState(() => _taken = next);
+  }
+
+  void _updateCountdown() {
+    final now = DateTime.now();
+    final h = widget.s['h'] as int;
+    final m = widget.s['m'] as int;
+    var dose = DateTime(now.year, now.month, now.day, h, m);
+    // If dose time has already passed today, show time to tomorrow's dose
+    if (now.isAfter(dose)) dose = dose.add(const Duration(days: 1));
+    _remaining = dose.difference(now);
+  }
+
+  String get _countdownLabel {
+    final totalMinutes = _remaining.inMinutes;
+    final h = _remaining.inHours;
+    final m = totalMinutes % 60;
+    final s = _remaining.inSeconds % 60;
+    if (h > 0)   return '${h}h ${m}m';
+    if (m > 0)   return '${m}m ${s}s';
+    return '${s}s';
+  }
+
+  bool get _isDue => _remaining.inSeconds <= 0;
+  bool get _isSoon => _remaining.inMinutes <= 30 && !_isDue;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = widget.s['color'] as Color;
+    Color countdownColor;
+    if (_taken)        countdownColor = const Color(0xFF16a34a);
+    else if (_isDue)   countdownColor = const Color(0xFFB6171E);
+    else if (_isSoon) countdownColor = const Color(0xFFFF9F43);
+    else              countdownColor = Colors.grey.shade500;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _taken ? const Color(0xFFF0FDF4) : Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: _taken
+            ? const Color(0xFF16a34a).withOpacity(0.3)
+            : _isDue
+              ? const Color(0xFFB6171E).withOpacity(0.25)
+              : Colors.grey.shade100),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6)]),
+      child: Row(children: [
+        // ── Time badge ─────────────────────────────────────────
+        Container(width: 52, height: 52,
           decoration: BoxDecoration(
-            color: _taken ? const Color(0xFF16a34a) : Colors.grey.shade100,
-            shape: BoxShape.circle),
-          child: Icon(_taken ? Icons.check_rounded : Icons.check_rounded,
-            color: _taken ? Colors.white : Colors.grey[300], size: 18))),
-    ]));
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12)),
+          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+            Text(widget.s['time']!.split(' ')[0],
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: color)),
+            Text(widget.s['time']!.split(' ')[1],
+              style: TextStyle(fontSize: 9, color: Colors.grey[500])),
+          ])),
+        const SizedBox(width: 14),
+        // ── Med name + countdown ────────────────────────────────
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(widget.s['med']!, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700,
+            color: _taken ? Colors.grey : const Color(0xFF1A1C1C),
+            decoration: _taken ? TextDecoration.lineThrough : null)),
+          const SizedBox(height: 2),
+          Text(widget.s['type']!, style: TextStyle(fontSize: 11, color: Colors.grey[500])),
+          const SizedBox(height: 6),
+          // ── Countdown chip ────────────────────────────────────
+          Row(children: [
+            Icon(
+              _taken
+                ? Icons.check_circle_rounded
+                : _isDue
+                  ? Icons.notifications_active_rounded
+                  : Icons.timer_outlined,
+              size: 12, color: countdownColor),
+            const SizedBox(width: 4),
+            Text(
+              _taken
+                ? 'Taken ✓'
+                : _isDue
+                  ? 'Due now!'
+                  : 'In $_countdownLabel',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: countdownColor)),
+          ]),
+        ])),
+        // ── Checkbox ────────────────────────────────────────────
+        GestureDetector(
+          onTap: _toggleTaken,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: 32, height: 32,
+            decoration: BoxDecoration(
+              color: _taken ? const Color(0xFF16a34a) : Colors.grey.shade100,
+              shape: BoxShape.circle),
+            child: Icon(Icons.check_rounded,
+              color: _taken ? Colors.white : Colors.grey[300], size: 18))),
+      ]));
+  }
 }
