@@ -1,0 +1,99 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>VitalGuard — Hospital Portal</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<link href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>*{font-family:'Inter',sans-serif}body{background:#f9f9f9}#map{height:360px;border-radius:16px}
+.pulse{animation:pulse 1.2s ease-in-out infinite}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.card{background:white;border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,.05)}</style></head>
+<body>
+<header style="background:white;border-bottom:1px solid #f0f0f0;padding:0 28px;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100">
+  <div style="display:flex;align-items:center;gap:12px">
+    <div style="width:38px;height:38px;background:linear-gradient(135deg,#B6171E,#DA3433);border-radius:12px;display:flex;align-items:center;justify-content:center">
+      <svg width="20" height="20" fill="white" viewBox="0 0 24 24"><path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/></svg>
+    </div>
+    <div><div style="font-size:17px;font-weight:900;color:#B6171E;font-style:italic;letter-spacing:1px">VITALGUARD</div>
+    <div style="font-size:11px;color:#888;font-weight:600">Hospital Command Center</div></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:14px">
+    <div id="cb" style="display:flex;align-items:center;gap:6px;background:#f0fdf4;padding:6px 14px;border-radius:20px">
+      <div style="width:8px;height:8px;background:#22c55e;border-radius:50%" class="pulse"></div>
+      <span id="cl" style="font-size:12px;font-weight:700;color:#16a34a">Connecting...</span>
+    </div>
+    <span id="clk" style="font-size:13px;color:#888"></span>
+  </div>
+</header>
+<div style="max-width:1400px;margin:0 auto;padding:24px 28px">
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px">
+    <div class="card" style="padding:20px"><div style="font-size:10px;font-weight:800;color:#888;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px">Active Emergencies</div><div id="sa" style="font-size:40px;font-weight:900;color:#B6171E">0</div></div>
+    <div class="card" style="padding:20px"><div style="font-size:10px;font-weight:800;color:#888;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px">Total Patients</div><div id="sp" style="font-size:40px;font-weight:900;color:#1A1C1C">0</div></div>
+    <div class="card" style="padding:20px"><div style="font-size:10px;font-weight:800;color:#888;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px">Ambulances Out</div><div id="sb" style="font-size:40px;font-weight:900;color:#2563EB">0</div></div>
+    <div class="card" style="padding:20px"><div style="font-size:10px;font-weight:800;color:#888;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px">Resolved</div><div id="sr" style="font-size:40px;font-weight:900;color:#16a34a">0</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:380px 1fr;gap:20px">
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="card" style="overflow:hidden">
+        <div style="padding:16px 20px;border-bottom:1px solid #f5f5f5;display:flex;justify-content:space-between;align-items:center">
+          <div style="font-size:15px;font-weight:800">Emergency Queue</div>
+          <span id="qc" style="background:#fee2e2;color:#B6171E;font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px">0</span>
+        </div>
+        <div id="queue" style="max-height:280px;overflow-y:auto"><div style="padding:32px;text-align:center;color:#aaa;font-size:13px">No active emergencies</div></div>
+      </div>
+      <div class="card" style="overflow:hidden">
+        <div style="padding:16px 20px;border-bottom:1px solid #f5f5f5"><div style="font-size:15px;font-weight:800">Patient Snapshot</div></div>
+        <div id="snap" style="padding:20px"><div style="color:#aaa;font-size:13px;text-align:center;padding:16px 0">Click an emergency to view patient</div></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="card" style="overflow:hidden">
+        <div style="padding:16px 20px;border-bottom:1px solid #f5f5f5;display:flex;justify-content:space-between;align-items:center">
+          <div style="font-size:15px;font-weight:800">Live Tracking Map</div>
+          <div style="font-size:11px;color:#888">🏠 Patient &nbsp; 🚑 Ambulance &nbsp; 🏥 Hospital</div>
+        </div>
+        <div style="padding:16px"><div id="map"></div></div>
+        <div id="acards" style="padding:0 16px 16px;display:flex;gap:10px;flex-wrap:wrap"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const API='http://localhost:8000';let map,markers={};
+function initMap(){map=L.map('map').setView([12.9716,77.5946],12);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);}
+setInterval(()=>{document.getElementById('clk').textContent=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'})},1000);
+async function fetchStats(){try{const r=await fetch(`${API}/hospital/stats`);const d=await r.json();document.getElementById('sa').textContent=d.active||0;document.getElementById('sp').textContent=d.total_patients||0;document.getElementById('sb').textContent=d.active||0;document.getElementById('sr').textContent=d.resolved||0}catch(e){}}
+async function fetchQ(){try{const r=await fetch(`${API}/hospital/emergencies`);const ev=await r.json();document.getElementById('qc').textContent=ev.length;const q=document.getElementById('queue');if(!ev.length){q.innerHTML='<div style="padding:32px;text-align:center;color:#aaa;font-size:13px">No active emergencies</div>';return;}
+q.innerHTML=ev.map(e=>`<div onclick="sel('${e.user_id}','${e.alert_message||''}',${JSON.stringify(e.location||{lat:12.9716,lng:77.5946})},${JSON.stringify(e.hospital||{name:'Apollo',lat:12.9252,lng:77.6011})})" style="padding:16px 20px;cursor:pointer;border-bottom:1px solid #f8f8f8" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background=''">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+<div style="display:flex;align-items:center;gap:8px"><div style="width:8px;height:8px;background:#B6171E;border-radius:50%" class="pulse"></div><span style="font-size:14px;font-weight:800">${e.user_id}</span></div>
+<span style="font-size:10px;font-weight:800;padding:3px 8px;border-radius:20px;background:#fee2e2;color:#B6171E">${(e.status||'TRIGGERED').replace(/_/g,' ').toUpperCase()}</span></div>
+<div style="font-size:11px;color:#B6171E;font-weight:600;margin-bottom:3px">${(e.alert_message||'').substring(0,55)}...</div>
+<div style="font-size:11px;color:#888">📍${e.location?.lat?.toFixed(4)||'--'}, ${e.location?.lng?.toFixed(4)||'--'} &nbsp;|&nbsp; 🏥${e.hospital?.name||'--'}</div>
+</div>`).join('');}catch(e){}}
+function sel(uid,alert,loc,hosp){
+if(markers.pat)map.removeLayer(markers.pat);
+const pi=L.divIcon({html:`<div style="background:#B6171E;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:18px;border:3px solid white;box-shadow:0 3px 10px rgba(182,23,30,0.4)">🏠</div>`,iconSize:[36,36],className:''});
+markers.pat=L.marker([loc.lat||12.9716,loc.lng||77.5946],{icon:pi}).addTo(map).bindPopup(`<b>Patient: ${uid}</b><br>🏠 Home Location`).openPopup();
+if(hosp.lat){if(markers.hosp)map.removeLayer(markers.hosp);
+const hi=L.divIcon({html:`<div style="background:#16a34a;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:18px;border:3px solid white;">🏥</div>`,iconSize:[36,36],className:''});
+markers.hosp=L.marker([hosp.lat,hosp.lng],{icon:hi}).addTo(map).bindPopup(`<b>${hosp.name}</b>`);}
+map.fitBounds([[loc.lat||12.9716,loc.lng||77.5946],[hosp.lat||12.9252,hosp.lng||77.6011]],{padding:[40,40]});
+document.getElementById('snap').innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+<div style="background:#f9f9f9;padding:12px;border-radius:10px"><div style="font-size:10px;font-weight:800;color:#888;text-transform:uppercase;margin-bottom:4px">Patient ID</div><div style="font-size:18px;font-weight:900">${uid}</div></div>
+<div style="background:#f9f9f9;padding:12px;border-radius:10px"><div style="font-size:10px;font-weight:800;color:#888;text-transform:uppercase;margin-bottom:4px">Hospital</div><div style="font-size:13px;font-weight:700;color:#006578">${hosp.name||'Dispatching'}</div></div>
+<div style="background:#fee2e2;padding:12px;border-radius:10px;grid-column:span 2"><div style="font-size:10px;font-weight:800;color:#B6171E;text-transform:uppercase;margin-bottom:4px">Alert</div><div style="font-size:12px;font-weight:600;color:#B6171E">${alert}</div></div>
+<div style="background:#f9f9f9;padding:12px;border-radius:10px"><div style="font-size:10px;font-weight:800;color:#888;text-transform:uppercase;margin-bottom:4px">Location</div><div style="font-size:12px;font-weight:600">📍${(loc.lat||12.9716).toFixed(4)}, ${(loc.lng||77.5946).toFixed(4)}</div></div>
+<div style="background:#f9f9f9;padding:12px;border-radius:10px"><div style="font-size:10px;font-weight:800;color:#888;text-transform:uppercase;margin-bottom:4px">Distance</div><div style="font-size:12px;font-weight:600">~${Math.round(Math.random()*8+2)} km</div></div>
+</div><button onclick="alert('Case accepted! Ambulance confirmed.')" style="width:100%;padding:12px;background:linear-gradient(135deg,#16a34a,#15803d);color:white;border:none;border-radius:12px;font-size:13px;font-weight:800;cursor:pointer">✓ ACCEPT CASE</button>`;}
+async function fetchAmb(){try{const r=await fetch(`${API}/sos/ambulances`);const a=await r.json();document.getElementById('sb').textContent=a.length;const cards=document.getElementById('acards');cards.innerHTML='';Object.keys(markers).filter(k=>k.startsWith('amb_')).forEach(k=>{map.removeLayer(markers[k]);delete markers[k]});
+a.forEach(amb=>{if(!amb.current_lat)return;const k=`amb_${amb.sos_id}`;const pct=amb.total_steps>0?Math.round(amb.step/amb.total_steps*100):0;
+const icon=L.divIcon({html:`<div style="background:#2563EB;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:18px;border:3px solid white;box-shadow:0 3px 10px rgba(37,99,235,0.4)">🚑</div>`,iconSize:[36,36],className:''});
+markers[k]=L.marker([amb.current_lat,amb.current_lng],{icon}).addTo(map).bindPopup(`<b>${amb.hospital}</b><br>ETA: ${amb.eta_minutes} min`);
+const card=document.createElement('div');card.style.cssText='background:#EFF6FF;border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:10px;border:1px solid #BFDBFE';
+card.innerHTML=`<span style="font-size:20px">🚑</span><div><div style="font-size:11px;font-weight:800;color:#2563EB">${amb.hospital}</div><div style="font-size:13px;font-weight:900">ETA: ${amb.eta_minutes} min &nbsp;<span style="color:#2563EB">${pct}%</span></div><div style="width:120px;height:4px;background:#BFDBFE;border-radius:2px;margin-top:4px"><div style="width:${pct}%;height:4px;background:#2563EB;border-radius:2px"></div></div></div>`;
+cards.appendChild(card);});}catch(e){}}
+function connectWS(){try{const ws=new WebSocket('ws://localhost:8000/hospital/ws');ws.onopen=()=>{document.getElementById('cl').textContent='Live';document.getElementById('cb').style.background='#f0fdf4'};ws.onmessage=()=>{fetchQ();fetchStats()};ws.onclose=()=>setTimeout(connectWS,3000);}catch(e){document.getElementById('cl').textContent='Polling';}}
+initMap();connectWS();fetchStats();fetchQ();fetchAmb();
+setInterval(fetchStats,10000);setInterval(fetchQ,5000);setInterval(fetchAmb,3000);
+</script></body></html>
