@@ -43,7 +43,7 @@ This project demonstrates a **complete healthcare ecosystem** including:
 * Role-based access (Patient, Doctor, Family)
 * Profile management
 
-### 2. Real-Time Dashboard
+### 2. Live Dashboard
 
 * Displays vitals such as:
 
