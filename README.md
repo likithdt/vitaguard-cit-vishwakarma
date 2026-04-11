@@ -68,7 +68,6 @@ This project demonstrates a **complete healthcare ecosystem** including:
 
   * Threshold-based alerts
   * Real-time push notifications
-  * SMS alerts via Twilio
 
 ### 6. Medication Reminder System
 
