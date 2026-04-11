@@ -1,7 +1,7 @@
-# 🏥 VitalGuard
+# VitalGuard
 # Smart Health Monitoring Ecosystem
 
-## The Team: **Team git commit**
+## **Team git commit**
 We are a group of developers from **GCEM (Gopalan College of Engineering and Management)**.
 
 * **Likith D T** (Team Lead)
@@ -9,7 +9,7 @@ We are a group of developers from **GCEM (Gopalan College of Engineering and Man
 * **Keerthan R**
 * **Manoj V**
 
-## 📌 Overview
+## Overview
 
 VitalGuard is a comprehensive AI-powered smart health monitoring system designed to simulate, track, and analyze patient vitals in real-time. The system provides predictive insights, emergency alerts, and seamless communication between patients, doctors, and hospitals.
 
@@ -25,18 +25,17 @@ This project demonstrates a **complete healthcare ecosystem** including:
 
 ## 🚀 Key Highlights
 
-* 🔴 Real-time vital monitoring dashboard
-* 🤖 AI-based predictive health analysis
-* 🚨 Emergency SOS with countdown
-* 📩 SMS alerts using Twilio
-* 🏥 Hospital portal with live data
-* 🚑 Live ambulance tracking simulation
-* 💊 Smart medication reminders
-* 👨‍⚕️ Multi-user system (patient, family, doctor)
+* Live vital monitoring dashboard
+* AI-based predictive health analysis
+* Emergency SOS with countdown
+* Hospital portal with live data
+* Live ambulance tracking simulation
+* Smart medication reminders
+* Multi-user system (patient, family, doctor)
 
 ---
 
-## 🧠 Features in Detail
+## Features in Detail
 
 ### 1. Authentication System
 
@@ -51,55 +50,53 @@ This project demonstrates a **complete healthcare ecosystem** including:
   * Heart Rate
   * Temperature
   * Oxygen Levels (SpO2)
-* Live updating cards
+  * Live updating cards
 
 ### 3. Simulator Engine
 
-* Generates synthetic health data every 5 minutes
-* Mimics real IoT devices
-* Helps test system without hardware
+  * Generates synthetic health data every 5 minutes
+  * Mimics real IoT devices
+  * Helps test system without hardware
 
 ### 4. AI Predictive Analysis
 
-* Uses machine learning models to:
-
+  * Uses machine learning models to
   * Detect abnormal patterns
   * Predict potential health risks
 
 ### 5. Alerts & Notifications
 
-* Threshold-based alerts
-* Real-time push notifications
-* SMS alerts via Twilio
+  * Threshold-based alerts
+  * Real-time push notifications
+  * SMS alerts via Twilio
 
 ### 6. Medication Reminder System
 
-* Suggests medications based on vitals
-* Automated reminders
+  * Suggests medications based on vitals
+  * Automated reminders
 
 ### 7. SOS Emergency Feature
 
-* 10-second countdown before triggering
-* Sends alerts to:
-
+  * 10-second countdown before triggering
+  * Sends alerts to:
   * Family
   * Doctors
   * Hospital portal
 
 ### 8. Hospital Portal
 
-* Web-based dashboard
-* Displays all patient alerts
-* Helps hospitals respond quickly
+  * Web-based dashboard
+  * Displays all patient alerts
+  * Helps hospitals respond quickly
 
 ### 9. Live Ambulance Tracking
 
-* Simulated map tracking
-* Helps visualize emergency response
+  * Simulated map tracking
+  * Helps visualize emergency response
 
 ---
 
-## 🛠️ Technologies Used
+## Technologies Used
 
 ### Backend
 
@@ -132,7 +129,7 @@ This project demonstrates a **complete healthcare ecosystem** including:
 
 ---
 
-## ⚙️ Requirements
+## Requirements
 
 ### System Requirements
 
@@ -164,9 +161,9 @@ geopy
 
 ---
 
-## ▶️ How to Run the Project
+## How to Run the Project
 
-### 1️⃣ Backend Setup
+### 1️. Backend Setup
 
 ```bash
 cd vitalguard/backend
@@ -176,7 +173,7 @@ pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
 ```
 
-### 2️⃣ Simulator Setup
+### 2️. Simulator Setup
 
 ```bash
 cd vitalguard/simulator
@@ -186,7 +183,7 @@ pip install numpy requests python-dotenv
 python simulator.py
 ```
 
-### 3️⃣ Flutter Web App
+### 3️. Flutter Web App
 
 ```bash
 cd vitalguard/mobile
@@ -195,7 +192,7 @@ flutter pub get
 flutter run -d chrome
 ```
 
-### 4️⃣ Hospital Portal
+### 4️. Hospital Portal
 
 * Open:
 
@@ -205,7 +202,7 @@ hospital_portal/index.html
 
 ---
 
-## 🧪 Testing Alerts
+## Testing Alerts
 
 ```bash
 cd vitalguard/simulator
@@ -214,7 +211,7 @@ python test_alert.py
 
 ---
 
-## 🤖 Use of AI
+## Use of AI
 
 VitalGuard integrates AI in the following ways:
 
@@ -225,7 +222,7 @@ VitalGuard integrates AI in the following ways:
 
 ---
 
-## 🌐 Complete Ecosystem Flow
+## Complete Ecosystem Flow
 
 1. Simulator generates patient data
 2. Backend processes & stores data
@@ -238,7 +235,7 @@ VitalGuard integrates AI in the following ways:
 
 ---
 
-## 📊 Why This Approach (No Hardware)?
+## Why This Approach (No Hardware)?
 
 * Faster development and testing
 * Cost-efficient
@@ -247,7 +244,7 @@ VitalGuard integrates AI in the following ways:
 
 ---
 
-## 🔮 Future Enhancements
+## Future Enhancements
 
 * Integration with real IoT devices
 * Advanced deep learning models
@@ -256,7 +253,7 @@ VitalGuard integrates AI in the following ways:
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 * Full API documentation available via FastAPI Swagger UI
 * Accessible at:
@@ -267,16 +264,13 @@ http://localhost:8000/docs
 
 ---
 
-## 👨‍💻 Team
+## Team
 
-Team Git Commit
+Team git commit
 
 ---
 
-## 📌 Conclusion
+## Conclusion
 
 VitalGuard is not just a project, but a **complete smart healthcare ecosystem** combining real-time monitoring, AI intelligence, and emergency response to improve patient safety and healthcare efficiency.
 
----
-
-⭐ If you like this project, consider giving it a star on GitHub!
